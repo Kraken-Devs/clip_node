@@ -1,0 +1,31 @@
+name: "Node docker"
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main", "dev"]
+###
+jobs:
+  set-env:
+    uses: ClipPoc/clip_templates/.github/workflows/env.yml@main
+  check_dependabot:
+    uses: ClipPoc/clip_templates/.github/workflows/dependabot_check.yml@main
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+  sonar:
+    needs: [set-env, check_dependabot]
+    uses: ClipPoc/clip_templates/.github/workflows/sonar.yml@main
+    with:
+      SONAR_PROYECT_KEY: "${{ github.event.repository.name }}_clip"
+      SONAR_HOST_URL: "https://sonarseba.bikotoru.cl"
+    secrets:
+      SONARQUBE_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  build:
+    needs: [set-env, sonar]
+    uses: ClipPoc/clip_templates/.github/workflows/node-build.yml@main
+    with:
+      NODE_VERSION: "14"
+      ENVIRONMENT: ${{ needs.set-env.outputs.env_name }}
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN  }}
